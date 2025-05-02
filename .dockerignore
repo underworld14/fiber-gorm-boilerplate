@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+.github
+
+# Docker
+.dockerignore
+docker-compose*.yml
+
+# Binaries and build artifacts
+/bin
+/tmp
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.db
+*.out
+
+# IDE files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Go test and coverage files
+coverage/
+coverage.out
+coverage.html
+*.test
+
+# Local development files
+*.env.local
+*.local.yaml
+/data
+
+# Project documentation
+README.md
+LICENSE
+docs/
+
+# Air (hot reload) configuration
+.air.toml
+
+# Windsurf configuration
+.windsurfrules
+
+# Dependency directories that will be reinstalled in the container
+/vendor
+
+# macOS specific
+.DS_Store
+
+# Log files
+*.log

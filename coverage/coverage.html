@@ -1,0 +1,1310 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>config: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">fiber-gorm/internal/config/config.go (0.0%)</option>
+				
+				<option value="file1">fiber-gorm/internal/database/database.go (0.0%)</option>
+				
+				<option value="file2">fiber-gorm/internal/handlers/auth_handler.go (0.0%)</option>
+				
+				<option value="file3">fiber-gorm/internal/handlers/user_handler.go (0.0%)</option>
+				
+				<option value="file4">fiber-gorm/internal/logger/logger.go (0.0%)</option>
+				
+				<option value="file5">fiber-gorm/internal/middleware/auth_middleware.go (0.0%)</option>
+				
+				<option value="file6">fiber-gorm/internal/middleware/middleware.go (0.0%)</option>
+				
+				<option value="file7">fiber-gorm/internal/models/user.go (0.0%)</option>
+				
+				<option value="file8">fiber-gorm/internal/repository/user_repository.go (0.0%)</option>
+				
+				<option value="file9">fiber-gorm/internal/services/auth_service.go (0.0%)</option>
+				
+				<option value="file10">fiber-gorm/internal/services/user_service.go (0.0%)</option>
+				
+				<option value="file11">fiber-gorm/internal/tests/helpers.go (74.1%)</option>
+				
+				<option value="file12">fiber-gorm/internal/validators/user_validator.go (0.0%)</option>
+				
+				<option value="file13">fiber-gorm/internal/validators/validator.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package config
+
+import (
+        "fmt"
+        "strings"
+
+        "github.com/spf13/viper"
+)
+
+// Config stores all configuration of the application
+type Config struct {
+        Environment string `mapstructure:"ENVIRONMENT"`
+        DBDriver    string `mapstructure:"DB_DRIVER"`
+        DBSource    string `mapstructure:"DB_SOURCE"`
+        ServerPort  string `mapstructure:"SERVER_PORT"`
+        LogLevel    string `mapstructure:"LOG_LEVEL"`
+        JWTSecret   string `mapstructure:"JWT_SECRET"`
+}
+
+// LoadConfig reads configuration from file or environment variables
+func LoadConfig() (config Config, err error) <span class="cov0" title="0">{
+        // Set defaults
+        viper.SetDefault("ENVIRONMENT", "development")
+        viper.SetDefault("DB_DRIVER", "sqlite")
+        viper.SetDefault("DB_SOURCE", "app.db")
+        viper.SetDefault("SERVER_PORT", "3000")
+        viper.SetDefault("LOG_LEVEL", "info")
+
+        // Look for .env file
+        viper.SetConfigName(".env")
+        viper.SetConfigType("env")
+        viper.AddConfigPath(".")
+
+        // Read from .env file if it exists
+        if err := viper.ReadInConfig(); err != nil </span><span class="cov0" title="0">{
+                if _, ok := err.(viper.ConfigFileNotFoundError); !ok </span><span class="cov0" title="0">{
+                        return config, fmt.Errorf("error reading config file: %w", err)
+                }</span>
+                // Config file not found, will use defaults and env vars
+        }
+
+        // Read from environment variables
+        <span class="cov0" title="0">viper.AutomaticEnv()
+        viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+        // Unmarshal config
+        err = viper.Unmarshal(&amp;config)
+        return</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package database
+
+import (
+        "fiber-gorm/internal/config"
+        "fiber-gorm/internal/models"
+        "fmt"
+
+        "gorm.io/driver/sqlite"
+        "gorm.io/gorm"
+        "gorm.io/gorm/logger"
+)
+
+func Connect() (*gorm.DB, error) <span class="cov0" title="0">{
+        // Load configuration
+        cfg, err := config.LoadConfig()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to load config: %w", err)
+        }</span>
+
+        // Configure GORM logger based on environment
+        <span class="cov0" title="0">logLevel := logger.Silent
+        if cfg.Environment == "development" </span><span class="cov0" title="0">{
+                logLevel = logger.Info
+        }</span>
+
+        // Create GORM config
+        <span class="cov0" title="0">gormConfig := &amp;gorm.Config{
+                Logger: logger.Default.LogMode(logLevel),
+        }
+
+        // Connect to database based on driver
+        var db *gorm.DB
+        switch cfg.DBDriver </span>{
+        case "sqlite":<span class="cov0" title="0">
+                db, err = gorm.Open(sqlite.Open(cfg.DBSource), gormConfig)</span>
+        default:<span class="cov0" title="0">
+                return nil, fmt.Errorf("unsupported database driver: %s", cfg.DBDriver)</span>
+        }
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to connect to database: %w", err)
+        }</span>
+
+        // Auto migrate models
+        <span class="cov0" title="0">if err := db.AutoMigrate(
+                &amp;models.User{},
+        ); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to migrate database: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return db, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handlers
+
+import (
+        "fiber-gorm/internal/models"
+        "fiber-gorm/internal/services"
+        "net/http"
+        "time"
+
+        "github.com/gofiber/fiber/v2"
+        "github.com/rs/zerolog/log"
+)
+
+// TokenResponse represents the response for token generation endpoints
+type TokenResponse struct {
+        AccessToken  string    `json:"access_token"`
+        RefreshToken string    `json:"refresh_token"`
+        TokenType    string    `json:"token_type"`
+        ExpiresAt    time.Time `json:"expires_at"`
+}
+
+// AuthHandler handles authentication routes
+type AuthHandler struct {
+        AuthSvc *services.AuthService
+}
+
+// Register handles user registration
+func (h *AuthHandler) Register(c *fiber.Ctx) error <span class="cov0" title="0">{
+        // Parse the request body
+        var payload models.CreateUserPayload
+        if err := c.BodyParser(&amp;payload); err != nil </span><span class="cov0" title="0">{
+                return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+                        "error": "Cannot parse JSON",
+                })
+        }</span>
+
+        // Register the user
+        <span class="cov0" title="0">user, err := h.AuthSvc.RegisterUser(&amp;payload)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error().Err(err).Msg("Failed to register user")
+                
+                // Check for specific errors to return appropriate status codes
+                if err.Error() == "email already in use" </span><span class="cov0" title="0">{
+                        return c.Status(http.StatusConflict).JSON(fiber.Map{
+                                "error": "Email is already registered",
+                        })
+                }</span>
+                
+                <span class="cov0" title="0">return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+                        "error": err.Error(),
+                })</span>
+        }
+
+        // Generate tokens for the newly registered user
+        <span class="cov0" title="0">accessToken, refreshToken, err := h.AuthSvc.CreateTokens(user)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+                        "error": "Failed to generate authentication tokens",
+                })
+        }</span>
+
+        // Calculate token expiration (15 minutes from now)
+        <span class="cov0" title="0">expiresAt := time.Now().Add(15 * time.Minute)
+
+        // Return the tokens
+        return c.Status(http.StatusCreated).JSON(TokenResponse{
+                AccessToken:  accessToken,
+                RefreshToken: refreshToken,
+                TokenType:    "bearer",
+                ExpiresAt:    expiresAt,
+        })</span>
+}
+
+// Login handles user login
+func (h *AuthHandler) Login(c *fiber.Ctx) error <span class="cov0" title="0">{
+        // Parse the request body
+        var payload models.LoginUserPayload
+        if err := c.BodyParser(&amp;payload); err != nil </span><span class="cov0" title="0">{
+                return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+                        "error": "Cannot parse JSON",
+                })
+        }</span>
+
+        // Authenticate the user
+        <span class="cov0" title="0">accessToken, refreshToken, err := h.AuthSvc.LoginUser(&amp;payload)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Debug().Err(err).Str("email", payload.Email).Msg("Login failed")
+                
+                // For security reasons, don't specify whether email or password is incorrect
+                return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+                        "error": "Invalid credentials",
+                })
+        }</span>
+
+        // Calculate token expiration (15 minutes from now)
+        <span class="cov0" title="0">expiresAt := time.Now().Add(15 * time.Minute)
+
+        // Return the tokens
+        return c.Status(http.StatusOK).JSON(TokenResponse{
+                AccessToken:  accessToken,
+                RefreshToken: refreshToken,
+                TokenType:    "bearer",
+                ExpiresAt:    expiresAt,
+        })</span>
+}
+
+// RefreshToken handles token refresh requests
+func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error <span class="cov0" title="0">{
+        // Parse the request body
+        var req struct {
+                RefreshToken string `json:"refresh_token"`
+        }
+        
+        if err := c.BodyParser(&amp;req); err != nil </span><span class="cov0" title="0">{
+                return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+                        "error": "Cannot parse JSON",
+                })
+        }</span>
+
+        // Validate the refresh token and generate new tokens
+        <span class="cov0" title="0">accessToken, refreshToken, err := h.AuthSvc.RefreshTokens(req.RefreshToken)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Debug().Err(err).Msg("Token refresh failed")
+                return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+                        "error": "Invalid or expired refresh token",
+                })
+        }</span>
+
+        // Calculate token expiration (15 minutes from now)
+        <span class="cov0" title="0">expiresAt := time.Now().Add(15 * time.Minute)
+
+        // Return the new tokens
+        return c.Status(http.StatusOK).JSON(TokenResponse{
+                AccessToken:  accessToken,
+                RefreshToken: refreshToken,
+                TokenType:    "bearer",
+                ExpiresAt:    expiresAt,
+        })</span>
+}
+
+// Me returns the authenticated user's information
+func (h *AuthHandler) Me(c *fiber.Ctx) error <span class="cov0" title="0">{
+        // Get the user ID from the context (set by auth middleware)
+        userID := c.Locals("userID").(string)
+        if userID == "" </span><span class="cov0" title="0">{
+                return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+                        "error": "Not authenticated",
+                })
+        }</span>
+
+        // Retrieve the user from the database
+        <span class="cov0" title="0">user, err := h.AuthSvc.UserRepo.FindUserById(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error().Err(err).Str("userID", userID).Msg("Failed to retrieve user")
+                return c.Status(http.StatusNotFound).JSON(fiber.Map{
+                        "error": "User not found",
+                })
+        }</span>
+
+        // Return user info (excluding sensitive data)
+        <span class="cov0" title="0">return c.Status(http.StatusOK).JSON(user)</span>
+}
+
+// Logout doesn't actually invalidate tokens (since they're stateless)
+// In a production app, you'd implement token blacklisting or use Redis for token management
+func (h *AuthHandler) Logout(c *fiber.Ctx) error <span class="cov0" title="0">{
+        return c.Status(http.StatusOK).JSON(fiber.Map{
+                "message": "Logged out successfully",
+        })
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handlers
+
+import (
+        "fiber-gorm/internal/models"
+        "fiber-gorm/internal/services"
+        "fiber-gorm/internal/validators"
+
+        "github.com/gofiber/fiber/v2"
+)
+
+type UserHandler struct {
+        Svc *services.UserService
+}
+
+func (h *UserHandler) CreateUser(c *fiber.Ctx) error <span class="cov0" title="0">{
+        var payload models.CreateUserPayload
+
+        if err := c.BodyParser(&amp;payload); err != nil </span><span class="cov0" title="0">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+                        "error": "Cannot parse JSON",
+                })
+        }</span>
+
+        // Validate the payload using custom validator
+        <span class="cov0" title="0">if err := validators.ValidateUserCreation(&amp;payload); err != nil </span><span class="cov0" title="0">{
+                return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+                        "errors": validators.FormatValidationError(err),
+                })
+        }</span>
+
+        <span class="cov0" title="0">user := models.User{
+                Name:     payload.Name,
+                Email:    payload.Email,
+                Password: payload.Password,
+                Hobby:    payload.Hobby,
+        }
+
+        if err := h.Svc.CreateUser(&amp;user); err != nil </span><span class="cov0" title="0">{
+                return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                        "error": "Failed to create user",
+                })
+        }</span>
+
+        <span class="cov0" title="0">return c.Status(fiber.StatusCreated).JSON(user)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package logger
+
+import (
+        "fiber-gorm/internal/config"
+        "fmt"
+        "os"
+        "strings"
+        "time"
+
+        "github.com/rs/zerolog"
+        "github.com/rs/zerolog/log"
+)
+
+// Setup configures the global logger based on application configuration
+func Setup(cfg config.Config) <span class="cov0" title="0">{
+        // Set global log level based on config
+        level, err := zerolog.ParseLevel(strings.ToLower(cfg.LogLevel))
+        if err != nil </span><span class="cov0" title="0">{
+                level = zerolog.InfoLevel
+        }</span>
+        <span class="cov0" title="0">zerolog.SetGlobalLevel(level)
+
+        // Use pretty console logging in development
+        if cfg.Environment == "development" </span><span class="cov0" title="0">{
+                log.Logger = log.Output(zerolog.ConsoleWriter{
+                        Out:        os.Stdout,
+                        TimeFormat: time.RFC3339,
+                })
+        }</span> else<span class="cov0" title="0"> {
+                // In production, use structured JSON logging
+                log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
+        }</span>
+
+        // Log startup information
+        <span class="cov0" title="0">log.Info().
+                Str("environment", cfg.Environment).
+                Str("log_level", level.String()).
+                Msg("Logger initialized")</span>
+}
+
+// Logger returns a new logger with the given component name
+func New(component string) zerolog.Logger <span class="cov0" title="0">{
+        return log.With().Str("component", `component`).Logger()
+}</span>
+
+// Error logs an error with context
+func Error(err error, msg string) <span class="cov0" title="0">{
+        log.Error().Err(err).Msg(msg)
+}</span>
+
+// Fatal logs a fatal error and exits
+func Fatal(err error, msg string) <span class="cov0" title="0">{
+        log.Fatal().Err(err).Msg(msg)
+}</span>
+
+// Debug logs a debug message
+func Debug(msg string, args ...interface{}) <span class="cov0" title="0">{
+        if len(args) &gt; 0 </span><span class="cov0" title="0">{
+                log.Debug().Msg(fmt.Sprintf(msg, args...))
+        }</span> else<span class="cov0" title="0"> {
+                log.Debug().Msg(msg)
+        }</span>
+}
+
+// Info logs an info message
+func Info(msg string, args ...interface{}) <span class="cov0" title="0">{
+        if len(args) &gt; 0 </span><span class="cov0" title="0">{
+                log.Info().Msg(fmt.Sprintf(msg, args...))
+        }</span> else<span class="cov0" title="0"> {
+                log.Info().Msg(msg)
+        }</span>
+}
+
+// Warn logs a warning message
+func Warn(msg string, args ...interface{}) <span class="cov0" title="0">{
+        if len(args) &gt; 0 </span><span class="cov0" title="0">{
+                log.Warn().Msg(fmt.Sprintf(msg, args...))
+        }</span> else<span class="cov0" title="0"> {
+                log.Warn().Msg(msg)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package middleware
+
+import (
+        "fiber-gorm/internal/config"
+        "strings"
+
+        "github.com/gofiber/fiber/v2"
+        "github.com/golang-jwt/jwt/v5"
+        "github.com/rs/zerolog/log"
+)
+
+// JWTAuthMiddleware creates a middleware for protecting routes with JWT
+func JWTAuthMiddleware(cfg *config.Config) fiber.Handler <span class="cov0" title="0">{
+        return func(c *fiber.Ctx) error </span><span class="cov0" title="0">{
+                // Get the Authorization header
+                authHeader := c.Get("Authorization")
+                if authHeader == "" </span><span class="cov0" title="0">{
+                        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+                                "message": "Authorization header is required",
+                        })
+                }</span>
+
+                // Check if the header has the Bearer prefix
+                <span class="cov0" title="0">parts := strings.Split(authHeader, " ")
+                if len(parts) != 2 || parts[0] != "Bearer" </span><span class="cov0" title="0">{
+                        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+                                "message": "Invalid authorization format, expected 'Bearer {token}'",
+                        })
+                }</span>
+
+                // Extract the token
+                <span class="cov0" title="0">tokenString := parts[1]
+
+                // Parse and validate the token
+                token, err := jwt.ParseWithClaims(tokenString, &amp;jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) </span><span class="cov0" title="0">{
+                        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
+                                return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid token signing method")
+                        }</span>
+                        <span class="cov0" title="0">return []byte(cfg.JWTSecret), nil</span>
+                })
+
+                <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                        log.Error().Err(err).Str("token", tokenString).Msg("Failed to parse JWT token")
+                        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+                                "message": "Invalid or expired token",
+                        })
+                }</span>
+
+                // Check if token is valid
+                <span class="cov0" title="0">if !token.Valid </span><span class="cov0" title="0">{
+                        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+                                "message": "Invalid token",
+                        })
+                }</span>
+
+                // Get claims and set user ID in context
+                <span class="cov0" title="0">if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok </span><span class="cov0" title="0">{
+                        c.Locals("userID", claims.Subject)
+                }</span>
+
+                <span class="cov0" title="0">return c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package middleware
+
+import (
+        "time"
+
+        "github.com/gofiber/fiber/v2"
+        "github.com/rs/zerolog/log"
+)
+
+// RequestLogger logs information about each request
+func RequestLogger() fiber.Handler <span class="cov0" title="0">{
+        return func(c *fiber.Ctx) error </span><span class="cov0" title="0">{
+                start := time.Now()
+                path := c.Path()
+                method := c.Method()
+
+                // Process request
+                err := c.Next()
+
+                // Log request details after completion
+                latency := time.Since(start)
+                status := c.Response().StatusCode()
+
+                log.Info().
+                        Str("method", method).
+                        Str("path", path).
+                        Int("status", status).
+                        Dur("latency", latency).
+                        Str("ip", c.IP()).
+                        // Str("user_agent", c.Get("User-Agent")).
+                        Msg("Request processed")
+
+                return err
+        }</span>
+}
+
+// ErrorHandler provides a consistent error response format
+func ErrorHandler() fiber.ErrorHandler <span class="cov0" title="0">{
+        return func(c *fiber.Ctx, err error) error </span><span class="cov0" title="0">{
+                // Default to 500 Internal Server Error
+                code := fiber.StatusInternalServerError
+
+                // Check if it's a Fiber error
+                if e, ok := err.(*fiber.Error); ok </span><span class="cov0" title="0">{
+                        code = e.Code
+                }</span>
+
+                // Log the error
+                <span class="cov0" title="0">log.Error().
+                        Err(err).
+                        Int("status", code).
+                        Str("path", c.Path()).
+                        Str("method", c.Method()).
+                        Msg("Request error")
+
+                // Return JSON error response
+                return c.Status(code).JSON(fiber.Map{
+                        "error": err.Error(),
+                })</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package models
+
+import (
+        "time"
+
+        "github.com/google/uuid"
+        "gorm.io/gorm"
+)
+
+type User struct {
+        ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+        Name      string    `json:"name"`
+        Email     string    `gorm:"uniqueIndex;not null" json:"email"`
+        Password  string    `json:"-"`
+        Hobby     *string   `json:"hobby"`
+        CreatedAt time.Time `json:"created_at"`
+        UpdatedAt time.Time `json:"updated_at"`
+}
+
+type CreateUserPayload struct {
+        Name     string  `json:"name" validate:"required"`
+        Email    string  `json:"email" validate:"required,email"`
+        Password string  `json:"password" validate:"required,min=6"`
+        Hobby    *string `json:"hobby"`
+}
+
+type LoginUserPayload struct {
+        Email    string `json:"email" validate:"required,email"`
+        Password string `json:"password" validate:"required,min=6"`
+}
+
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) <span class="cov0" title="0">{
+        u.ID = uuid.New()
+        return
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package repository
+
+import (
+        "fiber-gorm/internal/models"
+
+        "gorm.io/gorm"
+)
+
+type UserRepository struct {
+        DB *gorm.DB
+}
+
+func (r *UserRepository) CreateUser(user *models.User) error <span class="cov0" title="0">{
+        return r.DB.Create(user).Error
+}</span>
+
+func (r *UserRepository) FindAllUsers() ([]models.User, error) <span class="cov0" title="0">{
+        var users []models.User
+        return users, r.DB.Find(&amp;users).Error
+}</span>
+
+func (r *UserRepository) FindUserById(id string) (*models.User, error) <span class="cov0" title="0">{
+        var user models.User
+        return &amp;user, r.DB.Where("id = ?", id).First(&amp;user).Error
+}</span>
+
+func (r *UserRepository) FindUserByEmail(email string) (*models.User, error) <span class="cov0" title="0">{
+        var user models.User
+        return &amp;user, r.DB.First(&amp;user, "email = ?", email).Error
+}</span>
+
+func (r *UserRepository) UpdateUser(user *models.User) error <span class="cov0" title="0">{
+        return r.DB.Save(user).Error
+}</span>
+
+func (r *UserRepository) DeleteUser(user *models.User) error <span class="cov0" title="0">{
+        return r.DB.Delete(user).Error
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package services
+
+import (
+        "errors"
+        "fmt"
+        "time"
+
+        "github.com/golang-jwt/jwt/v5"
+        "github.com/rs/zerolog/log"
+        "golang.org/x/crypto/bcrypt"
+
+        "fiber-gorm/internal/config"
+        "fiber-gorm/internal/models"
+        "fiber-gorm/internal/repository"
+        "fiber-gorm/internal/validators"
+)
+
+// Custom token claims to include additional data
+type TokenClaims struct {
+        jwt.RegisteredClaims
+        Email    string `json:"email,omitempty"`
+        Username string `json:"username,omitempty"`
+        Role     string `json:"role,omitempty"`
+}
+
+// Error types for authentication
+var (
+        ErrInvalidCredentials = errors.New("invalid email or password")
+        ErrUserNotFound       = errors.New("user not found")
+        ErrInvalidToken       = errors.New("invalid or expired token")
+        ErrPasswordMismatch   = errors.New("passwords do not match")
+)
+
+// AuthService handles authentication logic
+type AuthService struct {
+        Cfg      config.Config
+        UserRepo *repository.UserRepository
+}
+
+// CreateTokens generates both access and refresh tokens for a user
+func (s *AuthService) CreateTokens(user *models.User) (accessToken string, refreshToken string, err error) <span class="cov0" title="0">{
+        // Create access token with custom claims
+        accessExp := time.Now().Add(15 * time.Minute)
+        accessClaims := &amp;TokenClaims{
+                RegisteredClaims: jwt.RegisteredClaims{
+                        ExpiresAt: jwt.NewNumericDate(accessExp),
+                        Subject:   user.ID.String(),
+                        IssuedAt:  jwt.NewNumericDate(time.Now()),
+                        ID:        fmt.Sprintf("%d", time.Now().UnixNano()),
+                },
+                Email:    user.Email,
+                Username: user.Name,
+                Role:     "user", // You can add role-based auth later
+        }
+
+        accessJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+        accessToken, err = accessJWT.SignedString([]byte(s.Cfg.JWTSecret))
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error().Err(err).Msg("Failed to sign access token")
+                return "", "", fmt.Errorf("failed to create access token: %w", err)
+        }</span>
+
+        // Create refresh token with minimal claims (long-lived)
+        <span class="cov0" title="0">refreshExp := time.Now().Add(7 * 24 * time.Hour)
+        refreshClaims := &amp;jwt.RegisteredClaims{
+                ExpiresAt: jwt.NewNumericDate(refreshExp),
+                Subject:   user.ID.String(),
+                IssuedAt:  jwt.NewNumericDate(time.Now()),
+                ID:        fmt.Sprintf("%d", time.Now().UnixNano()),
+        }
+
+        refreshJWT := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+        refreshToken, err = refreshJWT.SignedString([]byte(s.Cfg.JWTSecret))
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error().Err(err).Msg("Failed to sign refresh token")
+                return "", "", fmt.Errorf("failed to create refresh token: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return accessToken, refreshToken, nil</span>
+}
+
+// ValidateAccessToken validates an access token and returns the claims
+func (s *AuthService) ValidateAccessToken(tokenString string) (*TokenClaims, error) <span class="cov0" title="0">{
+        token, err := jwt.ParseWithClaims(tokenString, &amp;TokenClaims{}, func(token *jwt.Token) (interface{}, error) </span><span class="cov0" title="0">{
+                // Verify signing method
+                if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+                }</span>
+                <span class="cov0" title="0">return []byte(s.Cfg.JWTSecret), nil</span>
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">if !token.Valid </span><span class="cov0" title="0">{
+                return nil, ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">claims, ok := token.Claims.(*TokenClaims)
+        if !ok </span><span class="cov0" title="0">{
+                return nil, errors.New("failed to parse token claims")
+        }</span>
+
+        <span class="cov0" title="0">return claims, nil</span>
+}
+
+// ValidateRefreshToken validates a refresh token
+func (s *AuthService) ValidateRefreshToken(tokenString string) (string, error) <span class="cov0" title="0">{
+        token, err := jwt.ParseWithClaims(tokenString, &amp;jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) </span><span class="cov0" title="0">{
+                // Verify signing method
+                if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+                }</span>
+                <span class="cov0" title="0">return []byte(s.Cfg.JWTSecret), nil</span>
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">if !token.Valid </span><span class="cov0" title="0">{
+                return "", ErrInvalidToken
+        }</span>
+
+        <span class="cov0" title="0">claims, ok := token.Claims.(*jwt.RegisteredClaims)
+        if !ok </span><span class="cov0" title="0">{
+                return "", errors.New("failed to parse token claims")
+        }</span>
+
+        <span class="cov0" title="0">return claims.Subject, nil</span>
+}
+
+// HashPassword creates a bcrypt hash of a password
+func (s *AuthService) HashPassword(password string) (string, error) <span class="cov0" title="0">{
+        hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov0" title="0">return string(hash), nil</span>
+}
+
+// ComparePassword checks if the provided password matches the hashed password
+func (s *AuthService) ComparePassword(hashedPassword, password string) error <span class="cov0" title="0">{
+        err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+        if err != nil </span><span class="cov0" title="0">{
+                return ErrInvalidCredentials
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// LoginUser authenticates a user and returns access and refresh tokens
+func (s *AuthService) LoginUser(payload *models.LoginUserPayload) (accessToken string, refreshToken string, err error) <span class="cov0" title="0">{
+        // Validate the payload
+        if err = validators.Validate(payload); err != nil </span><span class="cov0" title="0">{
+                return "", "", fmt.Errorf("validation error: %w", err)
+        }</span>
+
+        // Find the user by email
+        <span class="cov0" title="0">user, err := s.UserRepo.FindUserByEmail(payload.Email)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error().Err(err).Str("email", payload.Email).Msg("User not found during login")
+                return "", "", ErrInvalidCredentials
+        }</span>
+
+        // Compare the password with the stored hash
+        <span class="cov0" title="0">if err = s.ComparePassword(user.Password, payload.Password); err != nil </span><span class="cov0" title="0">{
+                log.Debug().Err(err).Str("email", payload.Email).Msg("Password mismatch during login")
+                return "", "", ErrInvalidCredentials
+        }</span>
+
+        // Generate tokens
+        <span class="cov0" title="0">accessToken, refreshToken, err = s.CreateTokens(user)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", "", fmt.Errorf("failed to generate tokens: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return accessToken, refreshToken, nil</span>
+}
+
+// RegisterUser creates a new user account
+func (s *AuthService) RegisterUser(payload *models.CreateUserPayload) (*models.User, error) <span class="cov0" title="0">{
+        // Validate the payload
+        if err := validators.ValidateUserCreation(payload); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("validation error: %w", err)
+        }</span>
+
+        // Check if user already exists
+        <span class="cov0" title="0">_, err := s.UserRepo.FindUserByEmail(payload.Email)
+        if err == nil </span><span class="cov0" title="0">{
+                // User already exists
+                return nil, errors.New("email already in use")
+        }</span>
+
+        // Hash the password
+        <span class="cov0" title="0">hashedPassword, err := s.HashPassword(payload.Password)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to hash password: %w", err)
+        }</span>
+
+        // Create the user
+        <span class="cov0" title="0">user := models.User{
+                Name:     payload.Name,
+                Email:    payload.Email,
+                Password: hashedPassword,
+                Hobby:    payload.Hobby,
+        }
+
+        // Save the user to the database
+        if err := s.UserRepo.CreateUser(&amp;user); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create user: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// RefreshTokens generates new access and refresh tokens using a valid refresh token
+func (s *AuthService) RefreshTokens(refreshToken string) (string, string, error) <span class="cov0" title="0">{
+        // Validate the refresh token
+        userID, err := s.ValidateRefreshToken(refreshToken)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", "", fmt.Errorf("invalid refresh token: %w", err)
+        }</span>
+
+        // Get the user
+        <span class="cov0" title="0">user, err := s.UserRepo.FindUserById(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", "", ErrUserNotFound
+        }</span>
+
+        // Generate new tokens
+        <span class="cov0" title="0">accessToken, newRefreshToken, err := s.CreateTokens(user)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", "", fmt.Errorf("failed to create tokens: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return accessToken, newRefreshToken, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package services
+
+import (
+        "fiber-gorm/internal/models"
+        "fiber-gorm/internal/repository"
+)
+
+type UserService struct {
+        Repo *repository.UserRepository
+}
+
+func (s *UserService) CreateUser(user *models.User) error <span class="cov0" title="0">{
+        // Add business logic here (validation, etc.)
+        return s.Repo.CreateUser(user)
+}</span>
+
+func (s *UserService) FindAllUsers() ([]models.User, error) <span class="cov0" title="0">{
+        return s.Repo.FindAllUsers()
+}</span>
+
+func (s *UserService) FindUserById(id string) (*models.User, error) <span class="cov0" title="0">{
+        return s.Repo.FindUserById(id)
+}</span>
+
+func (s *UserService) UpdateUser(user *models.User) error <span class="cov0" title="0">{
+        return s.Repo.UpdateUser(user)
+}</span>
+
+func (s *UserService) DeleteUser(user *models.User) error <span class="cov0" title="0">{
+        return s.Repo.DeleteUser(user)
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package tests
+
+import (
+        "bytes"
+        "encoding/json"
+        "fiber-gorm/internal/config"
+        "fiber-gorm/internal/database"
+        "fiber-gorm/internal/handlers"
+        "fiber-gorm/internal/middleware"
+        "fiber-gorm/internal/repository"
+        "fiber-gorm/internal/services"
+        "io"
+        "net/http"
+        "net/http/httptest"
+        "testing"
+
+        "github.com/gofiber/fiber/v2"
+        "github.com/gofiber/fiber/v2/middleware/recover"
+        "github.com/stretchr/testify/assert"
+)
+
+// TestApp contains all dependencies for testing the API
+type TestApp struct {
+        App         *fiber.App
+        Config      config.Config
+        AuthSvc     *services.AuthService
+        UserSvc     *services.UserService
+        UserRepo    *repository.UserRepository
+        AuthHandler *handlers.AuthHandler
+        UserHandler *handlers.UserHandler
+        TestData    map[string]interface{} // Store test data between test cases
+}
+
+// SetupTestApp creates a test instance of the application with a test database
+func SetupTestApp(t *testing.T) *TestApp <span class="cov8" title="1">{
+        // Load test configuration
+        cfg := config.Config{
+                Environment: "test",
+                DBDriver:    "sqlite",
+                DBSource:    ":memory:", // Use in-memory SQLite for tests
+                ServerPort:  "3000",
+                LogLevel:    "error",
+                JWTSecret:   "test-jwt-secret",
+        }
+
+        // Connect to test database
+        db, err := database.Connect()
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to connect to test database: %v", err)
+        }</span>
+
+        // Setup test repositories
+        <span class="cov8" title="1">userRepo := &amp;repository.UserRepository{DB: db}
+
+        // Setup test services
+        userSvc := &amp;services.UserService{Repo: userRepo}
+        authSvc := &amp;services.AuthService{
+                Cfg:      cfg, // Pass the config directly (not a pointer)
+                UserRepo: userRepo,
+        }
+
+        // Setup test handlers
+        userHandler := &amp;handlers.UserHandler{Svc: userSvc}
+        authHandler := &amp;handlers.AuthHandler{AuthSvc: authSvc}
+
+        // Create test Fiber app with required settings for testing
+        app := fiber.New(fiber.Config{
+                ErrorHandler: middleware.ErrorHandler(),
+                // Disable startup message for tests
+                DisableStartupMessage: true,
+        })
+
+        // Setup middleware
+        app.Use(recover.New())
+
+        // Setup routes
+        api := app.Group("/api")
+
+        // User routes
+        api.Post("/users", userHandler.CreateUser)
+
+        // Auth routes
+        auth := api.Group("/auth")
+        auth.Post("/register", authHandler.Register)
+        auth.Post("/login", authHandler.Login)
+        auth.Post("/refresh", authHandler.RefreshToken)
+        auth.Post("/logout", authHandler.Logout)
+
+        // Protected routes - match the structure in main.go
+        protected := api.Group("/") 
+        protected.Use(middleware.JWTAuthMiddleware(&amp;cfg))
+        protected.Get("me", authHandler.Me) // Path is /api/me
+
+        return &amp;TestApp{
+                App:         app,
+                Config:      cfg,
+                AuthSvc:     authSvc,
+                UserSvc:     userSvc,
+                UserRepo:    userRepo,
+                AuthHandler: authHandler,
+                UserHandler: userHandler,
+                TestData:    make(map[string]interface{}), // Initialize test data storage
+        }</span>
+}
+
+// ExecuteRequest is kept for backward compatibility but you should use MakeRequest instead
+func (ta *TestApp) ExecuteRequest(req *http.Request) *httptest.ResponseRecorder <span class="cov0" title="0">{
+        // Create a response recorder
+        resp := httptest.NewRecorder()
+
+        // Execute the request and get the response
+        response, err := ta.App.Test(req)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        // Copy response data to our recorder for easy access
+        <span class="cov0" title="0">resp.Code = response.StatusCode
+        
+        // Copy response body
+        defer response.Body.Close()
+        body, err := io.ReadAll(response.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov0" title="0">resp.Write(body)
+
+        return resp</span>
+}
+
+// MakeRequest is a helper to create and execute requests in one step
+func (ta *TestApp) MakeRequest(method, url string, body interface{}, token string) (*http.Response, error) <span class="cov8" title="1">{
+        // Marshal the body to JSON if it's not nil
+        var reqBody string
+        if body != nil </span><span class="cov8" title="1">{
+                jsonBody, err := json.Marshal(body)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">reqBody = string(jsonBody)</span>
+        }
+
+        // Create request
+        <span class="cov8" title="1">req := httptest.NewRequest(method, url, bytes.NewBufferString(reqBody))
+        
+        // Set content type
+        req.Header.Set("Content-Type", "application/json")
+
+        // Set authorization header if token is provided
+        if token != "" </span><span class="cov8" title="1">{
+                req.Header.Set("Authorization", "Bearer "+token)
+        }</span>
+
+        // Execute the request directly using Fiber's test method
+        <span class="cov8" title="1">resp, err := ta.App.Test(req)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+// ParseResponse parses the JSON response into the provided struct
+func ParseResponse(t *testing.T, resp *http.Response, v interface{}) <span class="cov8" title="1">{
+        defer resp.Body.Close()
+        body, err := io.ReadAll(resp.Body)
+        assert.NoError(t, err, "Failed to read response body")
+        
+        // Log the response body for debugging
+        t.Logf("Response body: %s", string(body))
+        
+        if len(body) &gt; 0 </span><span class="cov8" title="1">{
+                err = json.Unmarshal(body, v)
+                assert.NoError(t, err, "Failed to parse response JSON")
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package validators
+
+import (
+        "errors"
+        "fiber-gorm/internal/models"
+        "regexp"
+        "strings"
+
+        "github.com/go-playground/validator/v10"
+)
+
+// ValidateUserCreation performs custom validations beyond the struct tags
+func ValidateUserCreation(payload *models.CreateUserPayload) error <span class="cov0" title="0">{
+        // Basic validation using struct tags
+        if err := Validate(payload); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Custom validations
+        <span class="cov0" title="0">if err := ValidatePassword(payload.Password); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">if err := validateName(payload.Name); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// validatePassword checks if password meets security requirements
+func ValidatePassword(password string) error <span class="cov0" title="0">{
+        // Check for at least one uppercase letter
+        if !regexp.MustCompile(`[A-Z]`).MatchString(password) </span><span class="cov0" title="0">{
+                return errors.New("password must contain at least one uppercase letter")
+        }</span>
+
+        // Check for at least one digit
+        <span class="cov0" title="0">if !regexp.MustCompile(`[0-9]`).MatchString(password) </span><span class="cov0" title="0">{
+                return errors.New("password must contain at least one digit")
+        }</span>
+
+        // Check for at least one special character
+        <span class="cov0" title="0">if !regexp.MustCompile(`[!@#$%^&amp;*(),.?":{}|&lt;&gt;]`).MatchString(password) </span><span class="cov0" title="0">{
+                return errors.New("password must contain at least one special character")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// validateName checks if name is valid
+func validateName(name string) error <span class="cov0" title="0">{
+        name = strings.TrimSpace(name)
+
+        if len(name) &lt; 2 </span><span class="cov0" title="0">{
+                return errors.New("name must be at least 2 characters long")
+        }</span>
+
+        // Check if name contains only letters and spaces
+        <span class="cov0" title="0">if !regexp.MustCompile(`^[a-zA-Z\s]+$`).MatchString(name) </span><span class="cov0" title="0">{
+                return errors.New("name must contain only letters and spaces")
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// FormatValidationError formats a validation error into a map for API response
+func FormatValidationError(err error) map[string]string <span class="cov0" title="0">{
+        if validationErrs, ok := err.(validator.ValidationErrors); ok </span><span class="cov0" title="0">{
+                return ValidationErrors(validationErrs)
+        }</span>
+
+        // Handle custom validation errors
+        <span class="cov0" title="0">return map[string]string{"error": err.Error()}</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package validators
+
+import (
+        "github.com/go-playground/validator/v10"
+)
+
+// Validator instance
+var validate = validator.New()
+
+// Validate validates a struct based on the validator tags
+func Validate(s interface{}) error <span class="cov0" title="0">{
+        return validate.Struct(s)
+}</span>
+
+// ValidationErrors returns a map of field errors
+func ValidationErrors(err error) map[string]string <span class="cov0" title="0">{
+        if err == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">errors := make(map[string]string)
+        
+        for _, err := range err.(validator.ValidationErrors) </span><span class="cov0" title="0">{
+                errors[err.Field()] = getErrorMsg(err)
+        }</span>
+        
+        <span class="cov0" title="0">return errors</span>
+}
+
+// getErrorMsg returns a more user-friendly error message based on the validation tag
+func getErrorMsg(err validator.FieldError) string <span class="cov0" title="0">{
+        switch err.Tag() </span>{
+        case "required":<span class="cov0" title="0">
+                return "This field is required"</span>
+        case "email":<span class="cov0" title="0">
+                return "Invalid email format"</span>
+        case "min":<span class="cov0" title="0">
+                return "Should be at least " + err.Param() + " characters long"</span>
+        default:<span class="cov0" title="0">
+                return "Invalid value"</span>
+        }
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

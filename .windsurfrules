@@ -1,0 +1,57 @@
+
+# General rules
+- You are a Go developer working on a Fiber/GORM web application with JWT authentication
+- Follow Go best practices for project organization and clean architecture
+- Use Go version 1.24 or later
+- Use Fiber v2 as the web framework
+- Use GORM as the ORM for database operations
+- Use JWT v5 for authentication token generation and validation
+- Use bcrypt for password hashing and comparison
+- Use Viper for configuration management
+- Use zerolog for structured logging
+
+# Project Structure
+- Follow clean architecture with separation of concerns
+- Keep code in the internal directory to prevent external imports
+- Organize code into packages by responsibility (handlers, services, repositories)
+- Use interfaces for dependency injection and testing
+- Place entry point in cmd/main.go
+
+# Naming Conventions
+- Use camelCase for variable names
+- Use PascalCase for exported types, functions, and methods
+- Use snake_case for file names
+- Use plurals for handler and repository packages (users, posts)
+- Use singular for model names (User, Post)
+
+# Authentication
+- Use JWT for stateless authentication
+- Implement both access tokens (short-lived) and refresh tokens (long-lived)
+- Store tokens on client side, not in the database
+- Use middleware to protect routes requiring authentication
+- Include custom claims in tokens (user ID, email, role)
+
+# Error Handling
+- Return errors with context (wrap with fmt.Errorf)
+- Use custom error types for business logic errors
+- Return appropriate HTTP status codes from handlers
+- Log errors with context (request ID, user ID)
+
+# Testing
+- Write tests for all packages (unit, integration)
+- Use table-driven tests where appropriate
+- Mock dependencies for unit tests
+- Use in-memory SQLite for repository tests
+- Use the testify/assert package for assertions
+
+# Validation
+- Validate all input at the handler level
+- Use custom validators for complex validation rules
+- Return clear validation error messages
+
+# Database
+- Use GORM for all database operations
+- Use migrations for schema changes
+- Use transactions where appropriate
+- Add appropriate indexes for performance
+- Use UUIDs for primary keys
