@@ -2,6 +2,27 @@
 
 A modern, structured Go application boilerplate using Fiber as the web framework and GORM for database interactions. Features a complete JWT authentication system with access/refresh tokens following clean architecture principles.
 
+## Prerequisites
+
+- **Go** 1.24 or later
+- **Air** (for live reload during development)
+
+### Install Air
+Air is required for running the development server with live reload. You can install it using either method below:
+
+**Using Go:**
+```sh
+go install github.com/air-verse/air@latest
+```
+Make sure `$GOPATH/bin` is in your `$PATH`.
+
+**Using Homebrew (macOS):**
+```sh
+brew install air
+```
+
+For more details, see the [Air documentation](https://github.com/cosmtrek/air).
+
 ## Features
 
 - **Structured Project Layout**: Following Go best practices for project organization
