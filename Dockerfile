@@ -30,14 +30,13 @@ WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/bin/server .
-COPY --from=builder /app/.env .env
 
 # Create volume for SQLite database persistence
 VOLUME ["/app/data"]
 
 # Set environment variables
-ENV DB_SOURCE=/app/data/app.db \
-    ENVIRONMENT=production
+ENV DB_SOURCE=/app/data/app.db
+ENV ENVIRONMENT=production
 
 # Expose port
 EXPOSE 3000
