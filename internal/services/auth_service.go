@@ -25,16 +25,23 @@ type TokenClaims struct {
 
 // Error types for authentication
 var (
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrInvalidToken       = errors.New("invalid or expired token")
-	ErrPasswordMismatch   = errors.New("passwords do not match")
+	ErrInvalidCredentials = errors.New("Invalid email or password")
+	ErrUserNotFound       = errors.New("User not found")
+	ErrInvalidToken       = errors.New("Invalid or expired token")
+	ErrPasswordMismatch   = errors.New("Passwords do not match")
 )
 
 // AuthService handles authentication logic
 type AuthService struct {
 	Cfg      config.Config
 	UserRepo *repository.UserRepository
+}
+
+func NewAuthService(cfg config.Config, userRepo *repository.UserRepository) *AuthService {
+	return &AuthService{
+		Cfg:      cfg,
+		UserRepo: userRepo,
+	}
 }
 
 // CreateTokens generates both access and refresh tokens for a user
@@ -150,32 +157,27 @@ func (s *AuthService) ComparePassword(hashedPassword, password string) error {
 }
 
 // LoginUser authenticates a user and returns access and refresh tokens
-func (s *AuthService) LoginUser(payload *models.LoginUserPayload) (accessToken string, refreshToken string, err error) {
-	// Validate the payload
-	if err = validators.Validate(payload); err != nil {
-		return "", "", fmt.Errorf("validation error: %w", err)
-	}
-
+func (s *AuthService) LoginUser(payload *models.LoginUserPayload) (user *models.User, accessToken string, refreshToken string, err error) {
 	// Find the user by email
-	user, err := s.UserRepo.FindUserByEmail(payload.Email)
+	user, err = s.UserRepo.FindUserByEmail(payload.Email)
 	if err != nil {
 		log.Error().Err(err).Str("email", payload.Email).Msg("User not found during login")
-		return "", "", ErrInvalidCredentials
+		return nil, "", "", ErrInvalidCredentials
 	}
 
 	// Compare the password with the stored hash
 	if err = s.ComparePassword(user.Password, payload.Password); err != nil {
 		log.Debug().Err(err).Str("email", payload.Email).Msg("Password mismatch during login")
-		return "", "", ErrInvalidCredentials
+		return nil, "", "", ErrInvalidCredentials
 	}
 
 	// Generate tokens
 	accessToken, refreshToken, err = s.CreateTokens(user)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate tokens: %w", err)
+		return nil, "", "", fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
-	return accessToken, refreshToken, nil
+	return user, accessToken, refreshToken, nil
 }
 
 // RegisterUser creates a new user account

@@ -40,20 +40,15 @@ func main() {
 	log.Info().Msg("Database connected successfully")
 
 	// Setup repositories
-	userRepo := &repository.UserRepository{DB: db}
+	userRepo := repository.NewUserRepository(db)
 
 	// Setup services
-	userService := &services.UserService{Repo: userRepo}
-	authService := &services.AuthService{
-		Cfg:      cfg,
-		UserRepo: userRepo,
-	}
+	userService := services.NewUserService(userRepo)
+	authService := services.NewAuthService(cfg, userRepo)
 
 	// Setup handlers
-	userHandler := &handlers.UserHandler{Svc: userService}
-	authHandler := &handlers.AuthHandler{
-		AuthSvc: authService,
-	}
+	userHandler := handlers.NewUserHandler(userService)
+	authHandler := handlers.NewAuthHandler(authService)
 
 	// Create Fiber app with custom error handler
 	app := fiber.New(fiber.Config{

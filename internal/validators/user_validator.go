@@ -65,11 +65,11 @@ func validateName(name string) error {
 }
 
 // FormatValidationError formats a validation error into a map for API response
-func FormatValidationError(err error) map[string]string {
+func FormatValidationError(err error, obj interface{}) interface{} {
 	if validationErrs, ok := err.(validator.ValidationErrors); ok {
-		return ValidationErrors(validationErrs)
+		return ValidationErrors(validationErrs, obj)
 	}
 
 	// Handle custom validation errors
-	return map[string]string{"error": err.Error()}
+	return err.Error()
 }

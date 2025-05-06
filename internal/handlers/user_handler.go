@@ -12,6 +12,10 @@ type UserHandler struct {
 	Svc *services.UserService
 }
 
+func NewUserHandler(svc *services.UserService) *UserHandler {
+	return &UserHandler{Svc: svc}
+}
+
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	var payload models.CreateUserPayload
 
@@ -24,7 +28,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	// Validate the payload using custom validator
 	if err := validators.ValidateUserCreation(&payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"errors": validators.FormatValidationError(err),
+			"errors": validators.FormatValidationError(err, payload),
 		})
 	}
 

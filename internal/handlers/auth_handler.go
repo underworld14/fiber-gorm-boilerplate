@@ -3,6 +3,7 @@ package handlers
 import (
 	"fiber-gorm/internal/models"
 	"fiber-gorm/internal/services"
+	"fiber-gorm/internal/validators"
 	"net/http"
 	"time"
 
@@ -23,6 +24,12 @@ type AuthHandler struct {
 	AuthSvc *services.AuthService
 }
 
+func NewAuthHandler(authSvc *services.AuthService) *AuthHandler {
+	return &AuthHandler{
+		AuthSvc: authSvc,
+	}
+}
+
 // Register handles user registration
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	// Parse the request body
@@ -33,18 +40,25 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
+	// Validate the payload
+	if errors := validators.ValidateUserCreation(&payload); errors != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": validators.FormatValidationError(errors, payload),
+		})
+	}
+
 	// Register the user
 	user, err := h.AuthSvc.RegisterUser(&payload)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to register user")
-		
+
 		// Check for specific errors to return appropriate status codes
 		if err.Error() == "email already in use" {
 			return c.Status(http.StatusConflict).JSON(fiber.Map{
 				"error": "Email is already registered",
 			})
 		}
-		
+
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -62,11 +76,14 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	expiresAt := time.Now().Add(15 * time.Minute)
 
 	// Return the tokens
-	return c.Status(http.StatusCreated).JSON(TokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    "bearer",
-		ExpiresAt:    expiresAt,
+	return c.Status(http.StatusCreated).JSON(fiber.Map{
+		"token": TokenResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+			TokenType:    "bearer",
+			ExpiresAt:    expiresAt,
+		},
+		"user": user,
 	})
 }
 
@@ -81,13 +98,13 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	// Authenticate the user
-	accessToken, refreshToken, err := h.AuthSvc.LoginUser(&payload)
+	user, accessToken, refreshToken, err := h.AuthSvc.LoginUser(&payload)
 	if err != nil {
 		log.Debug().Err(err).Str("email", payload.Email).Msg("Login failed")
-		
+
 		// For security reasons, don't specify whether email or password is incorrect
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid credentials",
+			"error": err.Error(),
 		})
 	}
 
@@ -95,11 +112,14 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	expiresAt := time.Now().Add(15 * time.Minute)
 
 	// Return the tokens
-	return c.Status(http.StatusOK).JSON(TokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    "bearer",
-		ExpiresAt:    expiresAt,
+	return c.Status(http.StatusOK).JSON(fiber.Map{
+		"token": TokenResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+			TokenType:    "bearer",
+			ExpiresAt:    expiresAt,
+		},
+		"user": user,
 	})
 }
 
@@ -109,7 +129,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
-	
+
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "Cannot parse JSON",

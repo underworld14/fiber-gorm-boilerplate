@@ -40,7 +40,7 @@ func Setup(cfg config.Config) {
 
 // Logger returns a new logger with the given component name
 func New(component string) zerolog.Logger {
-	return log.With().Str("component", `component`).Logger()
+	return log.With().Str("component", component).Logger()
 }
 
 // Error logs an error with context

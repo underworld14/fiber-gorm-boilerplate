@@ -9,6 +9,10 @@ type UserService struct {
 	Repo *repository.UserRepository
 }
 
+func NewUserService(repo *repository.UserRepository) *UserService {
+	return &UserService{Repo: repo}
+}
+
 func (s *UserService) CreateUser(user *models.User) error {
 	// Add business logic here (validation, etc.)
 	return s.Repo.CreateUser(user)
