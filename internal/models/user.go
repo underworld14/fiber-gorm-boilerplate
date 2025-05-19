@@ -31,5 +31,5 @@ type LoginUserPayload struct {
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	u.ID = uuid.New()
-	return
+	return nil
 }
