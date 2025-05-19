@@ -73,16 +73,22 @@ func main() {
 	auth.Post("/refresh-token", authHandler.RefreshToken)
 	auth.Post("/logout", authHandler.Logout)
 
-	// Protected routes (require authentication)
-	protected := api.Group("/")
-	protected.Use(middleware.JWTAuthMiddleware(&cfg))
-	protected.Get("/me", authHandler.Me)
+	// Profile routes
+	profile := api.Group("/profile")
+	profile.Use(middleware.JWTAuthMiddleware(&cfg))
+	profile.Get("/", authHandler.Me)
 
 	// Add health check endpoint
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "ok",
 			"version": "1.0.0",
+		})
+	})
+
+	app.Use(func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Not found",
 		})
 	})
 
