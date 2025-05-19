@@ -70,7 +70,7 @@ func main() {
 	auth := api.Group("/auth")
 	auth.Post("/register", authHandler.Register)
 	auth.Post("/login", authHandler.Login)
-	auth.Post("/refresh", authHandler.RefreshToken)
+	auth.Post("/refresh-token", authHandler.RefreshToken)
 	auth.Post("/logout", authHandler.Logout)
 
 	// Protected routes (require authentication)

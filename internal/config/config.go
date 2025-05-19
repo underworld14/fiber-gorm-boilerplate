@@ -25,6 +25,7 @@ func LoadConfig() (config Config, err error) {
 	viper.SetDefault("DB_SOURCE", "app.db")
 	viper.SetDefault("SERVER_PORT", "3000")
 	viper.SetDefault("LOG_LEVEL", "info")
+	viper.SetDefault("JWT_SECRET", "very-secret")
 
 	// Look for .env file
 	viper.SetConfigName(".env")

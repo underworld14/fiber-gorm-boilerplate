@@ -97,6 +97,13 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
+	// validate the payload
+	if errors := validators.ValidateLogin(&payload); errors != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": validators.FormatValidationError(errors, payload),
+		})
+	}
+
 	// Authenticate the user
 	user, accessToken, refreshToken, err := h.AuthSvc.LoginUser(&payload)
 	if err != nil {

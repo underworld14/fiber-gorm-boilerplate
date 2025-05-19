@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"fiber-gorm/internal/config"
-	"strings"
 
+	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog/log"
@@ -11,53 +11,35 @@ import (
 
 // JWTAuthMiddleware creates a middleware for protecting routes with JWT
 func JWTAuthMiddleware(cfg *config.Config) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		// Get the Authorization header
-		authHeader := c.Get("Authorization")
-		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Authorization header is required",
-			})
-		}
-
-		// Check if the header has the Bearer prefix
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Invalid authorization format, expected 'Bearer {token}'",
-			})
-		}
-
-		// Extract the token
-		tokenString := parts[1]
-
-		// Parse and validate the token
-		token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid token signing method")
+	return jwtware.New(jwtware.Config{
+		SigningKey: jwtware.SigningKey{
+			JWTAlg: jwtware.HS256,
+			Key:    []byte(cfg.JWTSecret),
+		},
+		ContextKey:   "user",
+		ErrorHandler: jwtError,
+		TokenLookup:  "header:Authorization:Bearer ,query:token",
+		SuccessHandler: func(c *fiber.Ctx) error {
+			token := c.Locals("user").(*jwt.Token)
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				c.Locals("userID", claims["sub"]) // Set user ID in context from 'sub' claim
 			}
-			return []byte(cfg.JWTSecret), nil
+			return c.Next()
+		},
+	})
+}
+
+// jwtError handles JWT validation errors
+func jwtError(c *fiber.Ctx, err error) error {
+	log.Error().Err(err).Msg("JWT validation error")
+
+	if err.Error() == "Missing or malformed JWT" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Missing or malformed token",
 		})
-
-		if err != nil {
-			log.Error().Err(err).Str("token", tokenString).Msg("Failed to parse JWT token")
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Invalid or expired token",
-			})
-		}
-
-		// Check if token is valid
-		if !token.Valid {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Invalid token",
-			})
-		}
-
-		// Get claims and set user ID in context
-		if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
-			c.Locals("userID", claims.Subject)
-		}
-
-		return c.Next()
 	}
+
+	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		"message": "Invalid or expired token",
+	})
 }
