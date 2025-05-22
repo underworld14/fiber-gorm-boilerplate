@@ -58,6 +58,7 @@ func main() {
 	// Setup middleware
 	app.Use(recover.New())
 	app.Use(cors.New())
+	app.Use(middleware.RequestIDMiddleware())
 	app.Use(middleware.RequestLogger())
 
 	// Setup API routes
@@ -74,8 +75,7 @@ func main() {
 	auth.Post("/logout", authHandler.Logout)
 
 	// Profile routes
-	profile := api.Group("/profile")
-	profile.Use(middleware.JWTAuthMiddleware(&cfg))
+	profile := api.Group("/profile", middleware.JWTAuthMiddleware(&cfg))
 	profile.Get("/", authHandler.Me)
 
 	// Add health check endpoint

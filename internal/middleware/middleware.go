@@ -13,6 +13,7 @@ func RequestLogger() fiber.Handler {
 		start := time.Now()
 		path := c.Path()
 		method := c.Method()
+		requestID := GetRequestID(c)
 
 		// Process request
 		err := c.Next()
@@ -22,6 +23,7 @@ func RequestLogger() fiber.Handler {
 		status := c.Response().StatusCode()
 
 		log.Info().
+			Str("request_id", requestID).
 			Str("method", method).
 			Str("path", path).
 			Int("status", status).
