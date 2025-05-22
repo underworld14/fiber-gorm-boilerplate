@@ -9,9 +9,11 @@ import (
 	"fiber-gorm/internal/repository"
 	"fiber-gorm/internal/services"
 	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
@@ -55,14 +57,23 @@ func main() {
 		ErrorHandler: middleware.ErrorHandler(),
 	})
 
-	// rateLimitter := middleware.NewRateLimitter(5, 1*time.Minute)
-
 	// Setup middleware
 	app.Use(recover.New())
 	app.Use(cors.New())
 	app.Use(middleware.RequestIDMiddleware())
 	app.Use(middleware.RequestLogger())
-	// app.Use(rateLimitter.Middleware)
+	app.Use(limiter.New(limiter.Config{
+		Max:               3,
+		Expiration:        1 * time.Minute,
+		LimiterMiddleware: limiter.SlidingWindow{},
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+		Storage: nil,
+		LimitReached: func(c *fiber.Ctx) error {
+			return fiber.NewError(fiber.StatusTooManyRequests, "Too many request")
+		},
+	}))
 
 	// Setup API routes
 	api := app.Group("/api")
