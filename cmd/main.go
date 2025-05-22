@@ -55,11 +55,14 @@ func main() {
 		ErrorHandler: middleware.ErrorHandler(),
 	})
 
+	// rateLimitter := middleware.NewRateLimitter(5, 1*time.Minute)
+
 	// Setup middleware
 	app.Use(recover.New())
 	app.Use(cors.New())
 	app.Use(middleware.RequestIDMiddleware())
 	app.Use(middleware.RequestLogger())
+	// app.Use(rateLimitter.Middleware)
 
 	// Setup API routes
 	api := app.Group("/api")
